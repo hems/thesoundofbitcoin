@@ -62,20 +62,23 @@ w.onmessage = (event) => {
     console.log("DAILY LOW     :", DAILY_LOW )
 
     // shadow
-    height = ( DAILY_HIGH - DAILY_LOW ) / 10
+    height = ( DAILY_HIGH - DAILY_LOW ) / 5
 
     $('#shadow').height(height)
+    $('#container').css('margin-top', height / -2)
 
     // candle
-    height = Math.abs( DAILY_CHANGE ) / 10
-    yPos   = ( DAILY_HIGH - OPEN_PRICE ) / 10
+    height = Math.abs( DAILY_CHANGE ) / 5
+    yPos   = ( DAILY_HIGH - OPEN_PRICE ) / 5
 
     $('#candle').height(height)
     $('#candle').css('margin-top', yPos)
 
     if(LAST_PRICE > OPEN_PRICE){
+      $('#shadow').css('background-color', 'green')
       $('#candle').css('background-color', 'green')
     } else {
+      $('#shadow').css('background-color', 'red')
       $('#candle').css('background-color', 'red')
     }
 
@@ -136,7 +139,15 @@ w.onopen = () => {
 
   margin-left: -5px;
 }
+
+#container {
+  position: absolute;
+  top: 50%;
+  left: 50%
+}
 </style>
 
-<div id="shadow"></div>
-<div id="candle"></div>
+<div id="container">
+  <div id="shadow"></div>
+  <div id="candle"></div>
+</div>
