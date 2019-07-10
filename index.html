@@ -1,0 +1,142 @@
+<script
+  src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+  integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
+  crossorigin="anonymous"></script>
+
+<script>
+
+const TICKER = 'BTCUSD'
+
+const w = new WebSocket('wss://api-pub.bitfinex.com/ws/2')
+
+const subscriptions = {}
+
+let known_price = null
+
+w.onmessage = (event) => {
+
+  let data = null
+
+  //console.log("event.data ->", event.data)
+
+  try  {
+    data = JSON.parse(event.data)
+  } catch(e){
+    console.log("error parsing event.data")
+    console.error(e)
+  }
+
+  // ignore heartbeat messages
+  if(data[1] == 'hb') return
+
+  if(data.event == 'subscribed') {
+
+    console.info("- event", data)
+
+    subscriptions[data.chanId] = data
+  }
+
+  // ignore event messages
+  if(!data || data.event) return
+
+  // get ticker data
+  chanId = data[0]
+  data   = data[1]
+
+  if(subscriptions[chanId].channel == 'ticker'){
+    DAILY_CHANGE     = data[4]
+    DAILY_CHANGE_PER = data[5]
+    LAST_PRICE       = data[6]
+    DAILY_HIGH       = data[8]
+    DAILY_LOW        = data[9]
+
+    OPEN_PRICE = LAST_PRICE - DAILY_CHANGE
+
+    console.log(" - ticker:", subscriptions[chanId].pair )
+
+    console.log("DAILY CHANGE  :", DAILY_CHANGE )
+    console.log("DAILY CHANGE %:", DAILY_CHANGE_PER )
+    console.log("LAST PRICE    :", LAST_PRICE )
+    console.log("OPEN PRICE    :", OPEN_PRICE )
+    console.log("DAILY HIGH    :", DAILY_HIGH )
+    console.log("DAILY LOW     :", DAILY_LOW )
+
+    // shadow
+    height = ( DAILY_HIGH - DAILY_LOW ) / 10
+
+    $('#shadow').height(height)
+
+    // candle
+    height = Math.abs( DAILY_CHANGE ) / 10
+    yPos   = ( DAILY_HIGH - OPEN_PRICE ) / 10
+
+    $('#candle').height(height)
+    $('#candle').css('margin-top', yPos)
+
+    if(LAST_PRICE > OPEN_PRICE){
+      $('#candle').css('background-color', 'green')
+    } else {
+      $('#candle').css('background-color', 'red')
+    }
+
+    // user needs to interact with page before audio can play
+    if(known_price){
+      if(known_price < LAST_PRICE) {
+        let audio = new Audio('./sounds/smb_powerup.wav')
+        audio.play()
+      } else {
+        let audio = new Audio('./sounds/smb_mariodie.wav')
+        audio.play()
+      }
+    }
+
+    known_price = LAST_PRICE
+
+  }
+
+}
+
+w.onopen = () => {
+
+  console.info( "- connection opened")
+
+  // subscribe to ticker
+  w.send( JSON.stringify({
+    event: 'subscribe',
+    channel: 'ticker',
+    symbol: 't' + TICKER
+  }) )
+
+}
+
+</script>
+
+<style>
+#shadow {
+  width : 1px;
+  height: 100px;
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  background-color: black
+}
+
+#candle {
+  width : 11px;
+  height: 100px;
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  background-color: #666;
+
+  margin-left: -5px;
+}
+</style>
+
+<div id="shadow"></div>
+<div id="candle"></div>
